@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   EditorRoot,
   EditorCommand,
@@ -12,6 +12,7 @@ import {
   EditorBubble,
 } from 'novel';
 import { ImageResizer, handleCommandNavigation } from 'novel/extensions';
+import { Message, useAssistant } from 'ai/react';
 
 import { defaultExtensions } from './extensions';
 import { NodeSelector } from './selectors/node-selector';
@@ -30,10 +31,30 @@ interface EditorProp {
   initialValue?: JSONContent;
   onChange: (value: JSONContent) => void;
 }
+
+const roleToColorMap: Record<Message['role'], string> = {
+  system: 'red',
+  user: 'black',
+  assistant: 'green',
+  function: '',
+  data: '',
+  tool: '',
+};
+
 const Editor = ({ initialValue, onChange }: EditorProp) => {
+  const { status, messages, input, submitMessage, handleInputChange, error } = useAssistant({
+    api: '/api/assistant',
+  });
   const [openNode, setOpenNode] = useState(false);
   const [openColor, setOpenColor] = useState(false);
   const [openLink, setOpenLink] = useState(false);
+
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (status === 'awaiting_message') {
+      inputRef.current?.focus();
+    }
+  }, [status]);
 
   return (
     <EditorRoot>
